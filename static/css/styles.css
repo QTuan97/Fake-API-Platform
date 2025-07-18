@@ -1,0 +1,179 @@
+:root {
+  --primary-color: #1C2331;
+  --secondary-color: #F7F9FC;
+  --accent-color: #E63946;
+  --accent-hover: #D62839;
+  --text-color: #333333;
+  --bg-light: #FFFFFF;
+  --border-color: #E0E0E0;
+  --border-radius: 12px;
+  --spacing: 1.5rem;
+  --font-base: 'Inter', sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-base);
+  background-color: var(--secondary-color);
+  color: var(--text-color);
+  line-height: 1.6;
+}
+
+.site-header .header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--primary-color);
+  padding: var(--spacing) 2rem;
+}
+
+.site-title {
+  margin: 0;
+  font-size: 1.75rem;
+  color: var(--bg-light);
+  text-decoration: none;
+}
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+.nav-item {
+  margin-left: var(--spacing);
+  color: var(--bg-light);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.nav-item:hover {
+  color: var(--accent-color);
+}
+
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: var(--spacing);
+}
+
+.card {
+  background-color: var(--bg-light);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+  padding: var(--spacing);
+  margin-bottom: var(--spacing);
+}
+
+h2 {
+  margin-top: 0;
+  font-size: 1.5rem;
+  color: var(--primary-color);
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+ul li {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+ul li:last-child {
+  border-bottom: none;
+}
+
+form {
+  background-color: var(--bg-light);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: var(--spacing);
+  margin-top: var(--spacing);
+}
+
+.form-group {
+  margin-bottom: var(--spacing);
+}
+
+label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="number"],
+textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  font-size: 1rem;
+}
+
+button {
+  background-color: var(--accent-color);
+  color: var(--bg-light);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+button:hover {
+  background-color: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+.flex {
+  display: flex;
+  gap: var(--spacing);
+}
+
+#vars-wrapper div {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Flash messages */
+.flash-messages {
+  margin-bottom: var(--spacing);
+}
+
+.flash {
+  padding: 0.75rem 1rem;
+  border-radius: var(--border-radius);
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.flash.error {
+  background-color: #e63946; /* Bold red */
+  color: #fff;
+}
+
+.flash.success {
+  background-color: #2a9d8f; /* Teal */
+  color: #fff;
+}
+
+.flash.info {
+  background-color: #457b9d; /* Muted blue */
+  color: #fff;
+}

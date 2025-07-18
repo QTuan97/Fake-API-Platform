@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="card main-section">
+    <h2>Collection: {{ collection.name }}</h2>
+    <p>{{ collection.description }}</p>
+  </div>
+
+  <div class="card main-section">
+    <h3>Requests</h3>
+    <ul>
+      {% for r in reqs %}
+        <li>{{ r.method }} {{ r.path }} – {{ r.name }}</li>
+      {% endfor %}
+    </ul>
+    <h4>Add Request</h4>
+    <form method="post">
+
+      <label>Name: <input type="text" name="req_name" required></label>
+      <label>Method: <input type="text" name="req_method" required></label>
+      <label>Path: <input type="text" name="req_path" required></label>
+      <button type="submit">Add</button>
+    </form>
+  </div>
+{% endblock %}

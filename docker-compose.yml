@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    container_name: fakeapi_db
+    environment:
+      POSTGRES_USER: fakeuser
+      POSTGRES_PASSWORD: fakepass
+      POSTGRES_DB: fakeapi
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  web:
+    build: .
+    container_name: fakeapi_web
+    working_dir: /app
+    command: python -u app.py
+    volumes:
+      - .:/app
+    ports:
+      - "5001:5000"
+    environment:
+      PYTHONUNBUFFERED: "1"
+      DATABASE_URL: postgresql://fakeuser:fakepass@db:5432/fakeapi
+      FLASK_ENV: development
+      PYTHONPATH: /app
+    depends_on:
+      - db
+
+volumes:
+  pgdata:

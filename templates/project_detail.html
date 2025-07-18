@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="card main-section">
+    <h2>Project: {{ project.name }}</h2>
+    <p>{{ project.description }}</p>
+  </div>
+
+  <div class="card main-section">
+    <h3>Collections</h3>
+    <ul>
+      {% for c in collections %}
+        <li><a href="{{ url_for('ui.collection_detail', collection_id=c.id) }}">{{ c.name }}</a></li>
+      {% endfor %}
+    </ul>
+    <h4>Add Collection</h4>
+    <form method="post">
+
+      <input type="hidden" name="action" value="new_collection">
+      <label>Name: <input type="text" name="collection_name" required></label>
+      <label>Description: <textarea name="collection_description"></textarea></label>
+      <button type="submit">Add</button>
+    </form>
+  </div>
+
+  <div class="card main-section">
+    <h3>Environments</h3>
+    <ul>
+      {% for e in envs %}
+        <li>{{ e.name }} – {{ e.variables }}</li>
+      {% endfor %}
+    </ul>
+    <h4>Add Environment</h4>
+    <form method="post">
+
+      <input type="hidden" name="action" value="new_environment">
+      <label>Name: <input type="text" name="env_name" required></label>
+      <div id="vars-wrapper">
+        <div>
+          <input type="text" name="var_key" placeholder="Key">
+          <input type="text" name="var_value" placeholder="Value">
+        </div>
+      </div>
+      <button type="button" id="add-var">Add Variable</button>
+      <button type="submit">Add Environment</button>
+    </form>
+  </div>
+{% endblock %}
