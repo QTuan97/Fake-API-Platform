@@ -65,16 +65,14 @@ from blueprints.ui          import ui_bp
 from blueprints.projects    import projects_bp
 from blueprints.collections import collections_bp
 from blueprints.requests    import requests_bp
-from blueprints.environments import env_bp
 from blueprints.mockrules   import mockrules_bp
 from blueprints.mockserve   import mock_bp
 
-app.register_blueprint(auth_bp)      # /auth/login
-app.register_blueprint(ui_bp)        # /login, /
-app.register_blueprint(projects_bp)  # /api/projects
+app.register_blueprint(auth_bp)
+app.register_blueprint(ui_bp)
+app.register_blueprint(projects_bp)
 app.register_blueprint(collections_bp)
 app.register_blueprint(requests_bp)
-app.register_blueprint(env_bp)
 app.register_blueprint(mockrules_bp)
 # catch-all last:
 app.register_blueprint(mock_bp)

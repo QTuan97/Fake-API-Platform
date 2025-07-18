@@ -1,5 +1,3 @@
-# blueprints/mockserve.py
-
 import re
 import json
 import time

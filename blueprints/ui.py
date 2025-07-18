@@ -1,10 +1,8 @@
-# blueprints/ui.py
-
 from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
 from functools import wraps
 from db import db
-from models import Project, Collection, Request as ReqModel, Environment
+from models import Project, Collection, Request as ReqModel
 
 ui_bp = Blueprint('ui', __name__, template_folder='templates')
 
@@ -42,13 +40,33 @@ def index():
 @ui_bp.route('/projects/<int:project_id>', methods=['GET', 'POST'])
 @jwt_ui_required
 def project_detail(project_id):
+    """Show a project, handle adding collections"""
     project = Project.query.get_or_404(project_id)
+
     if request.method == 'POST':
-        # handle nested forms if needed
-        pass
+        action = request.form.get('action')
+
+        if action == 'new_collection':
+            name = request.form.get('collection_name')
+            desc = request.form.get('collection_description')
+            if not name:
+                flash('Collection name is required.', 'error')
+            else:
+                col = Collection(
+                    project_id=project_id,
+                    name=name,
+                    description=desc or ''
+                )
+                db.session.add(col)
+                db.session.commit()
+                return redirect(url_for('ui.project_detail', project_id=project_id))
+
     collections = project.collections
-    environments = project.environments
-    return render_template('project_detail.html', project=project, collections=collections, envs=environments)
+    return render_template(
+        'project_detail.html',
+        project=project,
+        collections=collections
+    )
 
 @ui_bp.route('/collections/<int:collection_id>', methods=['GET', 'POST'])
 @jwt_ui_required

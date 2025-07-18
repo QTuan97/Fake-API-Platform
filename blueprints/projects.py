@@ -1,6 +1,5 @@
-# blueprints/projects.py
+
 from flask import Blueprint, request, jsonify, abort
-#from flask_jwt_extended import jwt_required
 from db import db
 from models import Project
 

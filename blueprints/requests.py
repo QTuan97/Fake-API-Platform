@@ -1,6 +1,4 @@
-# blueprints/requests.py
 from flask import Blueprint, request, jsonify, abort
-#from flask_jwt_extended import jwt_required
 from db import db
 from models import Request as ReqModel, Collection
 
@@ -26,7 +24,6 @@ def list_requests(collection_id):
             'headers': r.headers,
             'query_params': r.query_params,
             'body_template': r.body_template,
-            'tests': r.tests,
             'created_at': r.created_at.isoformat(),
             'updated_at': r.updated_at.isoformat()
         } for r in reqs
@@ -46,7 +43,6 @@ def get_request(collection_id, req_id):
         'headers': r.headers,
         'query_params': r.query_params,
         'body_template': r.body_template,
-        'tests': r.tests,
         'created_at': r.created_at.isoformat(),
         'updated_at': r.updated_at.isoformat()
     }), 200
@@ -67,8 +63,7 @@ def create_request(collection_id):
         path=data['path'],
         headers=data.get('headers'),
         query_params=data.get('query_params'),
-        body_template=data.get('body_template'),
-        tests=data.get('tests')
+        body_template=data.get('body_template')
     )
     db.session.add(r)
     db.session.commit()
@@ -87,7 +82,6 @@ def update_request(collection_id, req_id):
     r.headers = data.get('headers', r.headers)
     r.query_params = data.get('query_params', r.query_params)
     r.body_template = data.get('body_template', r.body_template)
-    r.tests = data.get('tests', r.tests)
     db.session.commit()
     return jsonify({'message': 'Request updated'}), 200
 

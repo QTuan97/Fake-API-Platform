@@ -13,7 +13,6 @@
       <nav class="site-nav">
       {% if current_user %}
         <span class="nav-item">Logged in as {{ current_user.username }}</span>
-        <a class="nav-item" href="{{ url_for('ui.index') }}">Projects</a>
         <a class="nav-item logout" href="{{ url_for('auth.logout') }}">Logout</a>
       {% endif %}
     </nav>

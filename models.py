@@ -27,7 +27,6 @@ class Project(db.Model):
     updated_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow,
                              onupdate=datetime.utcnow, nullable=False)
     collections = db.relationship('Collection', backref='project', cascade='all, delete-orphan')
-    environments = db.relationship('Environment', backref='project', cascade='all, delete-orphan')
     mock_rules = db.relationship('MockRule', backref='project', cascade='all, delete-orphan')
 
 class Collection(db.Model):
@@ -51,20 +50,9 @@ class Request(db.Model):
     headers = db.Column(db.JSON)
     query_params = db.Column(db.JSON)
     body_template = db.Column(db.JSON)
-    tests = db.Column(db.JSON)
     created_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow,
                                onupdate=datetime.utcnow, nullable=False)
-
-class Environment(db.Model):
-    __tablename__ = 'environments'
-    id = db.Column(db.Integer, primary_key=True)
-    project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete='CASCADE'), nullable=False)
-    name = db.Column(db.Text, nullable=False)
-    variables = db.Column(db.JSON, nullable=False)
-    created_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow, nullable=False)
-    updated_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow,
-                             onupdate=datetime.utcnow, nullable=False)
 
 class MockRule(db.Model):
     __tablename__ = 'mock_rules'
