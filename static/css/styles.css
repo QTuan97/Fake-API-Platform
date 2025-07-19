@@ -177,3 +177,93 @@ button:hover {
   background-color: #457b9d; /* Muted blue */
   color: #fff;
 }
+
+.request-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.request-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.request-item:last-child {
+  border-bottom: none;
+}
+
+.request-info {
+  flex: 1;
+  font-size: 0.95rem;
+  color: var(--text-color);
+}
+
+/* Actions on the right */
+.request-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.request-actions .btn {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+  line-height: 1;
+  min-width: 2.5rem;
+  height: 1.8rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  border-radius: 6px;
+}
+
+.request-actions .btn + .inline-form .btn-delete,
+.request-actions .btn + .btn-test {
+  margin-left: 0.4rem;
+}
+
+.btn {
+  display: inline-block;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.875rem;
+  text-decoration: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.btn-test {
+  background-color: var(--accent-color);
+  color: var(--bg-light);
+}
+
+.btn-test:hover {
+  background-color: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+.btn-delete {
+  background-color: #e63946;
+  color: #fff;
+}
+
+.btn-delete:hover {
+  background-color: #d62839;
+  transform: translateY(-1px);
+}
+
+.inline-form {
+  margin: 0;
+  padding: 0;
+  display: inline;
+}
+
+.inline-form button.btn-delete {
+  box-shadow: none;
+}

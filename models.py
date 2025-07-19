@@ -43,16 +43,33 @@ class Collection(db.Model):
 class Request(db.Model):
     __tablename__ = 'requests'
     id = db.Column(db.Integer, primary_key=True)
-    collection_id = db.Column(db.Integer, db.ForeignKey('collections.id', ondelete='CASCADE'), nullable=False)
+    collection_id = db.Column(
+        db.Integer,
+        db.ForeignKey('collections.id', ondelete='CASCADE'),
+        nullable=False
+    )
     name = db.Column(db.Text, nullable=False)
     method = db.Column(db.String(10), nullable=False)
     path = db.Column(db.Text, nullable=False)
-    headers = db.Column(db.JSON)
-    query_params = db.Column(db.JSON)
-    body_template = db.Column(db.JSON)
-    created_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow, nullable=False)
-    updated_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow,
-                               onupdate=datetime.utcnow, nullable=False)
+    headers = db.Column(db.JSON, default={}, nullable=False)
+    query_params = db.Column(db.JSON, default={}, nullable=False)
+    body_template = db.Column(db.JSON, nullable=True)
+    tests = db.Column(
+        db.JSON,
+        default=lambda: {'responseType': 'JSON', 'status': 200, 'delay_ms': 0},
+        nullable=False
+    )
+    created_at = db.Column(
+        db.DateTime(timezone=True),
+        default=datetime.utcnow,
+        nullable=False
+    )
+    updated_at = db.Column(
+        db.DateTime(timezone=True),
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False
+    )
 
 class MockRule(db.Model):
     __tablename__ = 'mock_rules'

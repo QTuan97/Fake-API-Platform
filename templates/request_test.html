@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="card main-section">
+    <h2>Test Request</h2>
+    <p><strong>[{{ req.method }}]</strong> {{ req.path }}</p>
+  </div>
+
+  <div class="card main-section">
+    <h3>Result</h3>
+    <div id="test-result">
+      <em>Click "Run Test" to execute.</em>
+    </div>
+    <button
+      id="run-test"
+      data-method="{{ req.method }}"
+      data-path="{{ req.path }}"
+    >
+      Run Test
+    </button>
+  </div>
+  <script src="{{ url_for('static', filename='js/request_test.js') }}"></script>
+{% endblock %}

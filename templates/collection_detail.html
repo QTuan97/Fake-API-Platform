@@ -5,19 +5,76 @@
     <p>{{ collection.description }}</p>
   </div>
 
+  <!-- Requests List -->
   <div class="card main-section">
-    <h3>Requests</h3>
-    <ul>
-      {% for r in reqs %}
-        <li>{{ r.method }} {{ r.path }} – {{ r.name }}</li>
-      {% endfor %}
-    </ul>
-    <h4>Add Request</h4>
-    <form method="post">
-      <label>Name: <input type="text" name="req_name" required></label>
-      <label>Method: <input type="text" name="req_method" required></label>
-      <label>Path: <input type="text" name="req_path" required></label>
-      <button type="submit">Add</button>
+    <h3>Your Requests</h3>
+    {% if reqs %}
+      <ul class="request-list">
+        {% for r in reqs %}
+          <li class="request-item">
+            <div class="request-info">
+              <strong>[{{ r.method }}]</strong> {{ r.name }}
+            </div>
+            <div class="request-actions">
+              <a href="{{ url_for('ui.test_request', collection_id=collection.id, req_id=r.id) }}"
+                 class="btn btn-test">
+                Test
+              </a>
+              <form action="{{ url_for('ui.delete_request', collection_id=collection.id, req_id=r.id) }}"
+                    method="post"
+                    class="btn btn-delete">
+                <button type="submit" class="btn btn-delete">Delete</button>
+              </form>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No requests yet for this collection.</p>
+    {% endif %}
+  </div>
+
+  <!-- Add New Request -->
+  <div class="card main-section">
+    <h3>Add New Request</h3>
+    <form action="{{ url_for('ui.collection_detail', collection_id=collection.id) }}" method="post">
+      <input type="hidden" name="action" value="new_request">
+
+      <div class="form-group">
+        <label>Name:<br>
+          <input type="text" name="req_name" required>
+        </label>
+      </div>
+      <div class="form-group">
+        <label>Method:<br>
+          <select name="req_method">
+            <option>GET</option>
+            <option>POST</option>
+            <option>PUT</option>
+            <option>DELETE</option>
+            <option>PATCH</option>
+          </select>
+        </label>
+      </div>
+      <div class="form-group">
+        <label>Path:<br>
+          <input type="text" name="req_path" placeholder="/endpoint/:id" required>
+        </label>
+      </div>
+      <div class="form-group">
+        <label>Format:<br>
+          <select name="response_format">
+            <option value="json">JSON</option>
+            <option value="xml">XML</option>
+          </select>
+        </label>
+      </div>
+      <div class="form-group">
+        <label>Body Template:<br>
+          <textarea name="body_template" rows="4" placeholder='{"message":"ok"}'></textarea>
+        </label>
+      </div>
+      <button type="submit" class="btn btn-primary">Create Request</button>
     </form>
   </div>
 {% endblock %}

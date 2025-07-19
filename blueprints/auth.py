@@ -9,9 +9,6 @@ from models import User
 gen_logger = logging.getLogger('auth')
 auth_bp = Blueprint('auth', __name__)
 
-
-@auth_bp.route('/<path:full_path>',
-               methods=['GET','POST','PUT','DELETE','PATCH'])
 def serve_mock(full_path):
     # 1) static files
     if full_path.startswith('static/'):
