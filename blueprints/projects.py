@@ -7,7 +7,6 @@ projects_bp = Blueprint('projects', __name__, url_prefix='/api/projects')
 
 
 @projects_bp.route('/', methods=['GET'])
-
 def list_projects():
     projects = Project.query.all()
     return jsonify([{
@@ -20,7 +19,6 @@ def list_projects():
     } for p in projects]), 200
 
 @projects_bp.route('/<int:project_id>', methods=['GET'])
-
 def get_project(project_id):
     project = Project.query.get_or_404(project_id)
     return jsonify({
@@ -33,7 +31,6 @@ def get_project(project_id):
     }), 200
 
 @projects_bp.route('/', methods=['POST'])
-
 def create_project():
     data = request.get_json() or {}
     if not data.get('name') or not data.get('owner_user'):
@@ -48,7 +45,6 @@ def create_project():
     return jsonify({'id': project.id}), 201
 
 @projects_bp.route('/<int:project_id>', methods=['PUT'])
-
 def update_project(project_id):
     project = Project.query.get_or_404(project_id)
     data = request.get_json() or {}
@@ -59,7 +55,6 @@ def update_project(project_id):
     return jsonify({'message': 'Project updated'}), 200
 
 @projects_bp.route('/<int:project_id>', methods=['DELETE'])
-
 def delete_project(project_id):
     project = Project.query.get_or_404(project_id)
     db.session.delete(project)

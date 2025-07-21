@@ -4,7 +4,7 @@
     <h2>Project: {{ project.name }}</h2>
     <p>{{ project.description }}</p>
   </div>
-
+<!-- Collections-->
   <div class="card main-section">
     <h3>Collections</h3>
     <ul>
@@ -16,18 +16,46 @@
         </li>
       {% endfor %}
     </ul>
-    <h4>Add Collection</h4>
-    <form action="{{ url_for('ui.project_detail', project_id=project.id) }}" method="post">
-      <input type="hidden" name="action" value="new_collection">
-      <label>
-        Name:
-        <input type="text" name="collection_name" required>
-      </label>
-      <label>
-        Description:
-        <textarea name="collection_description"></textarea>
-      </label>
-      <button type="submit">Add</button>
-    </form>
+    <a href="{{ url_for('ui.create_collection', project_id=project.id) }}"
+      class="btn btn-primary btn-new-collection">
+      Create
+    </a>
   </div>
+
+<!-- Mock Rules -->
+  <div class="card main-section">
+  <h3>Mock Rules</h3>
+    {% if mock_rules %}
+      <ul class="request-list">
+        {% for r in mock_rules %}
+          <li class="request-item">
+            <div class="request-info">
+              <strong>{{ r.name }}</strong><br>
+              <code>{{ r.match_criteria.method }} {{ r.match_criteria.pathRegex }}</code>
+            </div>
+            <div class="request-actions">
+              <a href="{{ url_for('mockrules.manage_mockrules',
+                                   project_id=project.id,
+                                   rule_id=r.id) }}"
+                 class="btn btn-test">Edit</a>
+              <form action="{{ url_for('mockrules.delete_mockrule',
+                                       project_id=project.id,
+                                       rule_id=r.id) }}"
+                    method="post"
+                    class="inline-form">
+                <button type="submit" class="btn btn-delete">Delete</button>
+              </form>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No mock rules defined yet.</p>
+    {% endif %}
+    <a href="{{ url_for('mockrules.manage_mockrules', project_id=project.id) }}"
+       class="btn btn-primary btn-new-collection">
+      Create
+    </a>
+  </div>
+
 {% endblock %}

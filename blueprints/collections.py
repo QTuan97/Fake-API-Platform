@@ -46,7 +46,7 @@ def collection_detail(collection_id):
                         body_obj = json.loads(body) if body else {}
                     except json.JSONDecodeError:
                         flash('Invalid JSON in body template.', 'error')
-                        return render_template('collection_detail.html', collection=col, reqs=col.requests)
+                        return render_template('requests.html', collection=col, reqs=col.requests)
                 else:
                     # for XML store raw string
                     body_obj = body
@@ -71,7 +71,7 @@ def collection_detail(collection_id):
 
     # existing GET logic
     reqs = col.requests
-    return render_template('collection_detail.html', collection=col, reqs=reqs)
+    return render_template('requests.html', collection=col, reqs=reqs)
 
 @collections_bp.route('/', methods=['GET'])
 def create_collection():

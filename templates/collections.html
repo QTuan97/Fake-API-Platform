@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="card main-section">
+    <h2>New Collection for “{{ project.name }}”</h2>
+    <form action="{{ url_for('ui.create_collection', project_id=project.id) }}"
+          method="post">
+      <div class="form-group">
+        <label>Name:<br>
+          <input type="text" name="name" required autofocus>
+        </label>
+      </div>
+      <div class="form-group">
+        <label>Description:<br>
+          <textarea name="description" rows="3"></textarea>
+        </label>
+      </div>
+      <button type="submit" class="btn btn-primary">Create Collection</button>
+      <a href="{{ url_for('ui.project_detail', project_id=project.id) }}"
+         class="btn btn-secondary">Cancel</a>
+    </form>
+  </div>
+{% endblock %}

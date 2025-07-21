@@ -53,7 +53,8 @@ class Request(db.Model):
     path = db.Column(db.Text, nullable=False)
     headers = db.Column(db.JSON, default={}, nullable=False)
     query_params = db.Column(db.JSON, default={}, nullable=False)
-    body_template = db.Column(db.JSON, nullable=True)
+    body_template = db.Column(db.Text, nullable=True)
+    # body_template = db.Column(db.JSON, nullable=True)
     tests = db.Column(
         db.JSON,
         default=lambda: {'responseType': 'JSON', 'status': 200, 'delay_ms': 0},
@@ -77,8 +78,10 @@ class MockRule(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete='CASCADE'), nullable=False)
     name = db.Column(db.Text, nullable=False)
     match_criteria = db.Column(db.JSON, nullable=False)
-    response_template = db.Column(db.JSON, nullable=False)
-    delay_ms = db.Column(db.Integer)
-    created_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow, nullable=False)
-    updated_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow,
-                                   onupdate=datetime.utcnow, nullable=False)
+    response_sequence = db.Column(db.JSON, nullable=False,
+                                  default=list)
+    created_at = db.Column(db.DateTime(timezone=True),
+                           default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True),
+                           default=datetime.utcnow,
+                           onupdate=datetime.utcnow, nullable=False)

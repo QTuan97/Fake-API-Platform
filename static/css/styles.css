@@ -267,3 +267,37 @@ button:hover {
 .inline-form button.btn-delete {
   box-shadow: none;
 }
+
+/* Button tweaks on project-detail page */
+.btn-new-collection,
+.btn-add-mockrule {
+  display: inline-block;
+  margin-top: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.95rem;
+  border-radius: var(--border-radius);
+  text-decoration: none;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+/* Primary “New Collection” */
+.btn-new-collection {
+  background-color: var(--accent-color);
+  color: var(--bg-light);
+}
+
+.btn-new-collection:hover {
+  background-color: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+/* Secondary “New Mock Rule” */
+.btn-add-mockrule {
+  background-color: var(--primary-color);
+  color: var(--bg-light);
+}
+
+.btn-add-mockrule:hover {
+  background-color: var(--text-color);
+  transform: translateY(-1px);
+}

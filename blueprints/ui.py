@@ -66,8 +66,30 @@ def project_detail(project_id):
     return render_template(
         'project_detail.html',
         project=project,
-        collections=collections
+        collections=collections,
+        mock_rules=project.mock_rules
     )
+
+@ui_bp.route('/projects/<int:project_id>/collections/new', methods=['GET', 'POST'])
+@jwt_ui_required
+def create_collection(project_id):
+    """Show form to create a new collection under project, and handle submission."""
+    project = Project.query.get_or_404(project_id)
+
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        desc = request.form.get('description', '').strip()
+        if not name:
+            flash('Collection name is required.', 'error')
+            return render_template('collections.html', project=project)
+        col = Collection(project_id=project_id, name=name, description=desc)
+        db.session.add(col)
+        db.session.commit()
+        flash(f'Collection "{name}" created.', 'success')
+        return redirect(url_for('ui.project_detail', project_id=project_id))
+
+    # GET → show blank form
+    return render_template('collections.html', project=project)
 
 @ui_bp.route('/collections/<int:collection_id>', methods=['GET', 'POST'])
 @jwt_ui_required
@@ -83,22 +105,10 @@ def collection_detail(collection_id):
         fmt       = request.form.get('response_format', 'json')
         body_text = request.form.get('body_template', '').strip()
 
-
         # Basic validation
         if not name or not method or not path:
             flash('Name, Method, and Path are required.', 'error')
         else:
-            # Parse JSON if needed
-            body_obj = None
-            if fmt == 'json' and body_text:
-                try:
-                    body_obj = __import__('json').loads(body_text)
-                except ValueError:
-                    flash('Invalid JSON in template.', 'error')
-                    # reload reqs below
-                    reqs = col.requests
-                    return render_template('collection_detail.html', collection=col, reqs=reqs)
-
             # Create and commit
             new_req = ReqModel(
                 collection_id=collection_id,
@@ -107,7 +117,8 @@ def collection_detail(collection_id):
                 path=path,
                 headers={},
                 query_params={},
-                body_template=body_obj,
+                # body_template=body_obj,
+                body_template=body_text,
                 tests={'responseType': fmt.upper(), 'status': 200, 'delay_ms': 0}
             )
             db.session.add(new_req)
@@ -120,7 +131,7 @@ def collection_detail(collection_id):
     reqs = col.requests
 
     # 4) Render the template with that list
-    return render_template('collection_detail.html', collection=col, reqs=reqs)
+    return render_template('requests.html', collection=col, reqs=reqs)
 
 @ui_bp.route('/collections/<int:collection_id>/requests/<int:req_id>/test', methods=['GET'])
 @jwt_ui_required

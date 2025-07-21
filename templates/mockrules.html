@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="card main-section">
+    <h2>Mock Rules for {{ project.name }}</h2>
+    {% if mock_rules %}
+      <ul class="mockrules-list">
+        {% for r in mock_rules %}
+          <li>
+            <strong>{{ r.name }}</strong>
+            &mdash;
+            <code>{{ r.match_criteria.method }} {{ r.match_criteria.pathRegex }}</code>
+            <a href="{{ url_for('mockrules.manage_mockrules', project_id=project.id, rule_id=r.id) }}"
+               class="btn btn-test">Edit</a>
+            <form action="{{ url_for('mockrules.delete_mockrule', project_id=project.id, rule_id=r.id) }}"
+                  method="post" class="inline-form">
+              <button type="submit" class="btn btn-delete">Delete</button>
+            </form>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No mock rules yet.</p>
+    {% endif %}
+  </div>
+
+  <div class="card main-section">
+    {% if rule %}
+      <h3>Edit Mock Rule</h3>
+      {% set action_url = url_for('mockrules.manage_mockrules',
+                                  project_id=project.id,
+                                  rule_id=rule.id) %}
+    {% else %}
+      <h3>Create New Mock Rule</h3>
+      {% set action_url = url_for('mockrules.manage_mockrules',
+                                  project_id=project.id) %}
+    {% endif %}
+
+    <form method="post" action="{{ action_url }}">
+      <!-- 0) Rule Name -->
+      <div class="form-group">
+        <label>Rule Name:<br>
+          <input type="text"
+                 name="name"
+                 placeholder="My Login Rule"
+                 required
+                 value="{{ rule.name if rule else '' }}">
+        </label>
+      </div>
+      <!-- 1) Method & Endpoint -->
+      <div class="form-group">
+        <label>Method:<br>
+          <select name="method" required>
+            {% for m in ['GET','POST','PUT','PATCH','DELETE'] %}
+              <option value="{{ m }}"
+                {% if rule and rule.match_criteria.method==m %}selected{% endif %}>
+                {{ m }}
+              </option>
+            {% endfor %}
+          </select>
+        </label>
+      </div>
+      <div class="form-group">
+        <label>Endpoint (pathRegex):<br>
+          <input type="text" name="endpoint" placeholder="/users/:id" required
+                 value="{{ rule.match_criteria.pathRegex if rule else '' }}">
+        </label>
+      </div>
+
+      <!-- 2) Match Criteria -->
+      <div class="form-group">
+        <label>Match Body Criteria (JSON key/value):<br>
+          <textarea name="match_body" rows="3"
+                    placeholder='{"username":"john"}'>{{ rule.match_criteria.get('body')|tojson if rule else '{}' }}</textarea>
+        </label>
+      </div>
+
+      <!-- 3) Response Settings -->
+      <fieldset class="form-group">
+        <legend>Response Settings</legend>
+        <div class="form-group">
+          <label>Status Code:<br>
+            <input type="number" name="resp_status" min="100" max="599" required
+                   value="{{ rule.response_sequence[0].response_template.status if rule else 200 }}">
+          </label>
+        </div>
+        <div class="form-group">
+          <label>Headers (JSON):<br>
+            <textarea name="resp_headers" rows="2"
+                      placeholder='{"Content-Type":"application/json"}'>{{ rule.response_sequence[0].response_template.headers|tojson if rule else '{"Content-Type":"application/json"}' }}</textarea>
+          </label>
+        </div>
+        <div class="form-group">
+          <label>Body Template (JSON):<br>
+            <textarea name="resp_body" rows="5"
+                      placeholder='{"error":"Unauthorized"}'>{{ rule.response_sequence[0].response_template.body|tojson if rule else '{}' }}</textarea>
+          </label>
+        </div>
+        <div class="form-group">
+          <label>Delay (ms):<br>
+            <input type="number" name="resp_delay" min="0"
+                   value="{{ rule.response_sequence[0].delay_ms if rule and rule.response_sequence[0].delay_ms is not none else 0 }}">
+          </label>
+        </div>
+      </fieldset>
+
+      <button type="submit" class="btn btn-primary">
+        {{ 'Update Rule' if rule else 'Create Rule' }}
+      </button>
+    </form>
+  </div>
+{% endblock %}

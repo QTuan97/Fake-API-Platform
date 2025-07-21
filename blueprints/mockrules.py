@@ -1,85 +1,134 @@
-from flask import Blueprint, request, jsonify, abort
+import json
+import logging
+from datetime import datetime
+from flask import Blueprint, request, render_template, redirect, url_for, flash, abort
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from db import db
-from models import MockRule, Project
+from models import Project, MockRule
 
-# CRUD for MockRules nested under Projects
-mockrules_bp = Blueprint(
-    'mockrules', __name__,
-    url_prefix='/api/projects/<int:project_id>/mockrules'
+logger = logging.getLogger(__name__)
+mockrules_bp = Blueprint('mockrules', __name__, template_folder='templates')
+
+def parse_json_field(field_name, default="{}"):
+    """
+    Pull a value from request.form[field_name], defaulting to '{}' if blank,
+    then json.loads() it. On error, flash a message and abort(400).
+    """
+    raw = (request.form.get(field_name) or "").strip()
+    if not raw:
+        raw = default
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError as e:
+        flash(f"Invalid JSON in '{field_name}': {e}", 'error')
+        abort(400)
+
+@mockrules_bp.route(
+    '/projects/<int:project_id>/mockrules',
+    methods=['GET', 'POST']
 )
+@mockrules_bp.route(
+    '/projects/<int:project_id>/mockrules/<int:rule_id>',
+    methods=['GET', 'POST']
+)
+@jwt_required()
+def manage_mockrules(project_id, rule_id=None):
+    user_id = get_jwt_identity()
+    project = Project.query.filter_by(id=project_id, owner_user=user_id).first_or_404()
 
-@mockrules_bp.route('/', methods=['GET'])
+    rule = None
+    if rule_id:
+        rule = MockRule.query.filter_by(id=rule_id, project_id=project_id).first_or_404()
 
-def list_mockrules(project_id):
-    # Ensure project exists
-    Project.query.get_or_404(project_id)
-    rules = MockRule.query.filter_by(project_id=project_id).all()
-    return jsonify([
-        {
-            'id':      r.id,
-            'name':    r.name,
-            'match':   r.match_criteria,
-            'response':r.response_template,
-            'delay_ms':r.delay_ms,
-            'created_at': r.created_at.isoformat(),
-            'updated_at': r.updated_at.isoformat()
-        } for r in rules
-    ]), 200
+    if request.method == 'POST':
+        # 1) Required scalar fields
+        method   = (request.form.get('method') or "").upper()
+        endpoint = (request.form.get('endpoint') or "").strip()
+        if not method or not endpoint:
+            flash('Method and Endpoint are required.', 'error')
+            return render_template(
+                'mockrules.html',
+                project=project,
+                rule=rule,
+                mock_rules=project.mock_rules
+            )
 
-@mockrules_bp.route('/<int:rule_id>', methods=['GET'])
+        # 2) Parse JSON inputs
+        match_body   = parse_json_field('match_body')
+        resp_headers = parse_json_field('resp_headers', default="{}")
+        resp_body    = parse_json_field('resp_body',    default="{}")
 
-def get_mockrule(project_id, rule_id):
-    r = MockRule.query.filter_by(project_id=project_id, id=rule_id).first_or_404()
-    return jsonify({
-        'id':      r.id,
-        'name':    r.name,
-        'match':   r.match_criteria,
-        'response':r.response_template,
-        'delay_ms':r.delay_ms,
-        'created_at': r.created_at.isoformat(),
-        'updated_at': r.updated_at.isoformat()
-    }), 200
+        # 3) Parse numeric inputs
+        try:
+            status = int(request.form.get('resp_status', 200))
+        except ValueError:
+            flash('Status must be a number.', 'error')
+            abort(400)
+        try:
+            delay = int(request.form.get('resp_delay', 0))
+        except ValueError:
+            flash('Delay must be a number.', 'error')
+            abort(400)
 
-@mockrules_bp.route('/', methods=['POST'])
+        # 4) Build JSON column payloads
+        match_crit = {
+            'method':    method,
+            'pathRegex': endpoint,
+            'body':      match_body
+        }
+        response_step = {
+            'response_template': {
+                'status':  status,
+                'headers': resp_headers,
+                'body':    resp_body
+            },
+            'delay_ms': delay
+        }
+        sequence = [response_step]
 
-def create_mockrule(project_id):
-    # Ensure project exists
-    Project.query.get_or_404(project_id)
-    data = request.get_json() or {}
-    # Validate required fields
-    name = data.get('name')
-    match = data.get('match_criteria')
-    response = data.get('response_template')
-    if not name or not match or not response:
-        abort(400, description="'name', 'match_criteria', and 'response_template' are required fields.")
-    delay = data.get('delay_ms')
-    rule = MockRule(
-        project_id=project_id,
-        name=name,
-        match_criteria=match,
-        response_template=response,
-        delay_ms=delay
+        # 5) Name the rule
+        name = (request.form.get('name') or '').strip()
+        if not name:
+            flash('Rule Name is required.', 'error')
+            abort(400)
+
+        if rule:
+            # update existing
+            rule.name               = name
+            rule.match_criteria     = match_crit
+            rule.response_sequence  = sequence
+            rule.updated_at         = datetime.utcnow()
+            flash('MockRule updated.', 'success')
+        else:
+            # create new
+            rule = MockRule(
+                project_id=project_id,
+                name=name,
+                match_criteria=match_crit,
+                response_sequence=sequence
+            )
+            db.session.add(rule)
+            flash('MockRule created.', 'success')
+
+        db.session.commit()
+        return redirect(url_for('ui.project_detail', project_id=project_id))
+
+    # GET → render UI
+    return render_template(
+        'mockrules.html',
+        project=project,
+        rule=rule,
+        mock_rules=project.mock_rules
     )
-    db.session.add(rule)
-    db.session.commit()
-    return jsonify({'id': rule.id}), 201
 
-@mockrules_bp.route('/<int:rule_id>', methods=['PUT'])
-
-def update_mockrule(project_id, rule_id):
-    r = MockRule.query.filter_by(project_id=project_id, id=rule_id).first_or_404()
-    data = request.get_json() or {}
-    r.name = data.get('name', r.name)
-    r.match_criteria = data.get('match_criteria', r.match_criteria)
-    r.response_template = data.get('response_template', r.response_template)
-    r.delay_ms = data.get('delay_ms', r.delay_ms)
-    db.session.commit()
-    return jsonify({'message': 'MockRule updated'}), 200
-
-@mockrules_bp.route('/<int:rule_id>', methods=['DELETE'])
-
+@mockrules_bp.route(
+    '/projects/<int:project_id>/mockrules/<int:rule_id>/delete',
+    methods=['POST']
+)
+@jwt_required()
 def delete_mockrule(project_id, rule_id):
-    r = MockRule.query.filter_by(project_id=project_id, id=rule_id).first_or_404()
-    db.session.delete(r)
+    rule = MockRule.query.filter_by(id=rule_id, project_id=project_id).first_or_404()
+    db.session.delete(rule)
     db.session.commit()
-    return jsonify({'message': 'MockRule deleted'}), 200
+    flash('MockRule deleted.', 'success')
+    return redirect(url_for('ui.project_detail', project_id=project_id))
