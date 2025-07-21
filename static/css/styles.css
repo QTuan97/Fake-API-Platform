@@ -290,14 +290,3 @@ button:hover {
   background-color: var(--accent-hover);
   transform: translateY(-1px);
 }
-
-/* Secondary “New Mock Rule” */
-.btn-add-mockrule {
-  background-color: var(--primary-color);
-  color: var(--bg-light);
-}
-
-.btn-add-mockrule:hover {
-  background-color: var(--text-color);
-  transform: translateY(-1px);
-}
