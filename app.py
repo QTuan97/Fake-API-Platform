@@ -68,14 +68,13 @@ from blueprints.requests    import requests_bp
 from blueprints.mockrules   import mockrules_bp
 from blueprints.mockserve   import mock_bp
 
+app.register_blueprint(mock_bp)
 app.register_blueprint(auth_bp)
 app.register_blueprint(ui_bp)
 app.register_blueprint(projects_bp)
 app.register_blueprint(collections_bp)
 app.register_blueprint(requests_bp)
 app.register_blueprint(mockrules_bp)
-# catch-all last:
-app.register_blueprint(mock_bp)
 
 @app.route('/health')
 def health():

@@ -2,21 +2,40 @@
 {% block content %}
   <div class="card main-section">
     <h2>Test Request</h2>
-    <p><strong>[{{ req.method }}]</strong> {{ req.path }}</p>
+    <p><strong>[{{ method }}]</strong> {{ endpoint }}</p>
   </div>
 
   <div class="card main-section">
-    <h3>Result</h3>
-    <div id="test-result">
-      <em>Click "Run Test" to execute.</em>
-    </div>
+    <h3>Request</h3>
+
+    {% if method in ['POST','PUT','PATCH','DELETE'] %}
+      <div class="form-group">
+        <label for="test-body">Payload (JSON):</label><br>
+        <textarea
+          id="test-body"
+          rows="5"
+          style="width:100%; font-family:monospace;"
+          placeholder='{"key":"value"}'
+        >{}</textarea>
+      </div>
+    {% endif %}
+
     <button
       id="run-test"
-      data-method="{{ req.method }}"
-      data-path="{{ req.path }}"
+      type="button"
+      class="btn btn-primary"
+      data-method="{{ method }}"
+      data-template-path="{{ endpoint }}"
+      data-user-id="{{ user_id }}"
     >
       Run Test
     </button>
   </div>
+
+  <div class="card main-section">
+    <h3>Response</h3>
+    <div id="test-result"><em>No test run yet.</em></div>
+  </div>
+
   <script src="{{ url_for('static', filename='js/request_test.js') }}"></script>
 {% endblock %}

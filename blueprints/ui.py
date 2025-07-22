@@ -3,6 +3,7 @@ from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
 from functools import wraps
 from db import db
 from models import Project, Collection, Request as ReqModel
+from models import MockRule
 
 ui_bp = Blueprint('ui', __name__, template_folder='templates')
 
@@ -136,8 +137,17 @@ def collection_detail(collection_id):
 @ui_bp.route('/collections/<int:collection_id>/requests/<int:req_id>/test', methods=['GET'])
 @jwt_ui_required
 def test_request(collection_id, req_id):
-    req = ReqModel.query.filter_by(id=req_id, collection_id=collection_id).first_or_404()
-    return render_template('request_test.html', req=req)
+    # Load the stored request model
+    req_model = ReqModel.query.filter_by(id=req_id, collection_id=collection_id).first_or_404()
+    user_id = get_jwt_identity()
+    # Pass both the HTTP method & the saved endpoint path
+    return render_template(
+      'request_test.html',
+      method=req_model.method,
+      endpoint=req_model.path,     # this is your “/users/:id” or whatever
+      req_model=req_model,     # if you need other props
+      user_id=user_id
+    )
 
 @ui_bp.route('/collections/<int:collection_id>/requests/<int:req_id>/delete', methods=['POST'])
 @jwt_ui_required
@@ -152,3 +162,12 @@ def delete_request(collection_id, req_id):
 def logout_page():
     """Page to redirect to login; front-end should clear token."""
     return redirect(url_for('auth.login'))
+
+@ui_bp.route('/debug/mockrule')
+@jwt_ui_required
+def debug_rule():
+    rule = MockRule.query.filter_by(name="Get User By ID").first_or_404()
+    return {
+        "match_criteria": rule.match_criteria,
+        "response_sequence": rule.response_sequence
+    }

@@ -1,93 +1,118 @@
+# blueprints/mockserve.py
+
 import re
 import json
 import time
 from flask import Blueprint, request, jsonify, abort, current_app
-from jinja2 import Template
+from sqlalchemy.inspection import inspect
 
-from models import Request as ReqModel, MockRule
+from models import Request as ReqModel, MockRule, User, Collection  # import your models
+
+# Map field names to model classes
+DYNAMIC_MODELS = {
+    'username': User,
+    'collection_name': Collection,
+    # add more: 'email': User, 'project_id': Project, etc.
+}
 
 mock_bp = Blueprint('mock', __name__)
 
+def model_to_dict(obj):
+    """Turn a SQLAlchemy object into a plain dict."""
+    return {c.key: getattr(obj, c.key) for c in inspect(obj).mapper.column_attrs}
+
 @mock_bp.route('/<path:full_path>', methods=['GET','POST','PUT','DELETE','PATCH'])
 def serve_mock(full_path):
-    """
-    Catch-all mock server:
-    1. Skip real routes (login, auth, API endpoints)
-    2. Serve static assets
-    3. Apply MockRule definitions
-    4. Fallback to stored Request models
-    5. Return 404 if no match
-    """
-    # 1) Skip real application routes
-    if full_path in ('login', 'logout') or full_path.startswith('auth/') or full_path.startswith('api/'):
-        abort(404)
+    current_app.logger.info(f"[MOCK] Incoming {request.method} /{full_path}")
 
-    # 2) Serve static assets
+    # 1) Static assets
     if full_path.startswith('static/'):
         return current_app.send_static_file(full_path)
 
-    # 3) Dynamic MockRules
+    # 2) Dynamic MockRules (explicit JSON templates or DB rules)
     for rule in MockRule.query.all():
         crit = rule.match_criteria or {}
-        if crit.get('method') and crit['method'] != request.method:
+        if crit.get('method', '').upper() != request.method:
             continue
-        regex = crit.get('pathRegex')
-        if not regex:
-            continue
-        m = re.fullmatch(regex.lstrip('/'), full_path)
+
+        # Build the regex for pathRegex with :param → named groups
+        raw = crit.get('pathRegex', '').lstrip('/')
+        pattern = '^' + re.sub(r':(\w+)',
+                               lambda m: f"(?P<{m.group(1)}>[^/]+)",
+                               raw) + '$'
+        m = re.fullmatch(pattern, full_path)
+        current_app.logger.info(f"[MOCK] Trying rule #{rule.id} pattern /{pattern} → {bool(m)}")
         if not m:
             continue
 
-        # We have a matching rule
-        steps = rule.response_sequence or []
-        if not steps:
-            abort(500, "No response_sequence defined on rule")
+        # 2a) If rule says to use DB lookup automatically
+        # We detect any DYNAMIC_MODELS keys in JSON body:
+        data = request.get_json(silent=True) or {}
+        model_class = None
+        for field in DYNAMIC_MODELS:
+            if field in data:
+                model_class = DYNAMIC_MODELS[field]
+                break
 
-        # 1) Check for conditional override steps first
-        for step in steps:
-            cond = step.get('condition')
-            if cond:
-                if _matches_condition(cond, request):   # implement this helper
-                    chosen = step
-                    break
-        else:
-            # 2) Otherwise cycle through steps by invocation count
-            key = f"mockrule:{rule.id}:idx"
-            idx = session.get(key, 0)
-            chosen = steps[idx % len(steps)]
-            session[key] = idx + 1
+        if model_class:
+            # Build filter kwargs from intersection of model's columns & data
+            mapper = inspect(model_class)
+            cols = {col.key for col in mapper.mapper.column_attrs}
+            filters = {k: data[k] for k in data if k in cols}
 
-        # 3) Render the body_template with Jinja
-        params = m.groupdict()
-        # Also inject current_user if you like:
-        user = None
+            # Query
+            obj = model_class.query.filter_by(**filters).first()
+            if not obj:
+                return jsonify({"error": f"{model_class.__name__} not found", **{k: None for k in filters}}), 404
+
+            # Optionally simulate delay
+            delay = rule.response_sequence[0].get('delay_ms', 0) or 0
+            if delay:
+                time.sleep(delay / 1000.0)
+
+            return jsonify(model_to_dict(obj)), 200, {"Content-Type":"application/json"}
+
+        # 2b) Otherwise fall back to your existing JSON‐template logic
+        step    = rule.response_sequence[0]
+        delay   = step.get('delay_ms', 0) or 0
+        if delay:
+            time.sleep(delay/1000.0)
+
+        tpl     = step['response_template']
+        body_obj= tpl.get('body', {})
+
+        # Perform simple :param replacements from URL captures
+        params  = m.groupdict()
+        body_str = json.dumps(body_obj)
+        for k, v in params.items():
+            body_str = body_str.replace(f":{k}", str(v))
+
         try:
-            verify_jwt_in_request(optional=True)
-            uid = get_jwt_identity()
-            user = User.query.get(uid) if uid else None
-        except:
-            pass
+            body = json.loads(body_str)
+            return jsonify(body), tpl.get('status',200), tpl.get('headers',{})
+        except json.JSONDecodeError:
+            return body_str, tpl.get('status',200), tpl.get('headers',{})
 
-        template_str = json.dumps(chosen['response_template'].get('body', {}))
-        rendered = Template(template_str).render(**params, user=user)
-        body = json.loads(rendered)
+    # 3) Static Request fallback (unchanged)
+    for r in ReqModel.query.filter_by(method=request.method).all():
+        raw = r.path.lstrip('/')
+        pat = '^' + re.sub(r':(\w+)',
+                           lambda m: f"(?P<{m.group(1)}>[^/]+)",
+                           raw) + '$'
+        mm = re.fullmatch(pat, full_path)
+        if not mm:
+            continue
 
-        # 4) Delay, status, headers
-        if chosen.get('delay_ms'):
-            time.sleep(chosen['delay_ms']/1000)
-        status  = chosen['response_template'].get('status', 200)
-        headers = chosen['response_template'].get('headers', {})
+        params   = mm.groupdict()
+        body_tpl = r.body_template or {}
+        body_str = json.dumps(body_tpl)
+        for k, v in params.items():
+            body_str = body_str.replace(f":{k}", str(v))
+        try:
+            body = json.loads(body_str)
+            return jsonify(body), 200, (r.headers or {})
+        except json.JSONDecodeError:
+            return body_str, 200, (r.headers or {})
 
-        return jsonify(body), status, headers
-
-    # 5) No match → return 404
+    # 4) No match → 404
     abort(404, description=f"No mock for {request.method} /{full_path}")
-
-def _matches_condition(cond, req):
-    qs = req.args or {}
-    for where, checks in cond.items():
-        if where == 'query':
-            for k,v in checks.items():
-                if qs.get(k) == v:
-                    return True
-    return False
