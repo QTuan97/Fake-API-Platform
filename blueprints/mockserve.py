@@ -1,9 +1,8 @@
-# blueprints/mockserve.py
-
 import re
 import json
 import time
 from flask import Blueprint, request, jsonify, abort, current_app
+from flask_jwt_extended import create_access_token
 from sqlalchemy.inspection import inspect
 
 from models import Request as ReqModel, MockRule, User, Collection  # import your models
@@ -12,7 +11,6 @@ from models import Request as ReqModel, MockRule, User, Collection  # import you
 DYNAMIC_MODELS = {
     'username': User,
     'collection_name': Collection,
-    # add more: 'email': User, 'project_id': Project, etc.
 }
 
 mock_bp = Blueprint('mock', __name__)
@@ -20,6 +18,22 @@ mock_bp = Blueprint('mock', __name__)
 def model_to_dict(obj):
     """Turn a SQLAlchemy object into a plain dict."""
     return {c.key: getattr(obj, c.key) for c in inspect(obj).mapper.column_attrs}
+
+def simulator_login(data):
+    user = User.query.filter_by(username=data['username']).first()
+
+    if not user or not user.check_password(data.get('password', '')):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    user_data = model_to_dict(user)
+    user_data.pop('password_hash', None)
+    token = create_access_token(identity=user.id)
+
+    return jsonify({
+        "id": user.id,
+        "username": user.username,
+        "access_token": token
+    }), 200
 
 @mock_bp.route('/<path:full_path>', methods=['GET','POST','PUT','DELETE','PATCH'])
 def serve_mock(full_path):
@@ -35,6 +49,11 @@ def serve_mock(full_path):
         if crit.get('method', '').upper() != request.method:
             continue
 
+        if crit.get('require_jwt'):
+            try:
+                verify_jwt_in_request()
+            except Exception:
+                return jsonify({"error": "Unauthorized"}), 401
         # Build the regex for pathRegex with :param → named groups
         raw = crit.get('pathRegex', '').lstrip('/')
         pattern = '^' + re.sub(r':(\w+)',
@@ -45,10 +64,14 @@ def serve_mock(full_path):
         if not m:
             continue
 
-        # 2a) If rule says to use DB lookup automatically
         # We detect any DYNAMIC_MODELS keys in JSON body:
         data = request.get_json(silent=True) or {}
         model_class = None
+
+        # Dynamic login simulation
+        if 'username' in data and request.method == 'POST':
+            simulator_login(data)
+
         for field in DYNAMIC_MODELS:
             if field in data:
                 model_class = DYNAMIC_MODELS[field]
